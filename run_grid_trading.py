@@ -262,6 +262,10 @@ def detect_market_type(symbol: str, exchange_name: str) -> ExchangeType:
         # 符号格式：BTC-USD, ETH-USD, SOL-USD等
         return ExchangeType.PERPETUAL
 
+    # GRVT 交易所
+    elif exchange_lower == "grvt":
+        return ExchangeType.PERPETUAL
+
     # 其他交易所默认为永续合约
     else:
         return ExchangeType.PERPETUAL
@@ -294,8 +298,24 @@ async def create_exchange_adapter(config_data: dict):
     wallet_address = os.getenv(
         f"{exchange_name.upper()}_WALLET_ADDRESS")  # 用于 Hyperliquid
 
+    grvt_credentials = {}
+
+    # GRVT 特殊处理：读取专属环境变量
+    if exchange_name == "grvt":
+        grvt_credentials = {
+            "api_key": os.getenv("GRVT_API_KEY", api_key or ""),
+            "eth_private_key": os.getenv("GRVT_ETH_PRIVATE_KEY", ""),
+            "signer_address": os.getenv("GRVT_SIGNER_ADDRESS", ""),
+            "trading_account_id": os.getenv("GRVT_TRADING_ACCOUNT_ID", ""),
+            "base_url": os.getenv("GRVT_BASE_URL"),
+            "websocket_url": os.getenv("GRVT_WEBSOCKET_URL"),
+            "testnet": os.getenv("GRVT_TESTNET"),
+        }
+        api_key = grvt_credentials["api_key"]
+        api_secret = grvt_credentials["eth_private_key"] or api_secret
+
     # 如果环境变量没有设置，尝试从交易所配置文件读取
-    if not api_key or not api_secret:
+    if exchange_name != "grvt" and (not api_key or not api_secret):
         try:
             exchange_config_path = Path(
                 f"config/exchanges/{exchange_name}_config.yaml")
@@ -402,6 +422,51 @@ async def create_exchange_adapter(config_data: dict):
                 enable_websocket=True,
                 enable_auto_reconnect=True
             )
+
+    elif exchange_name == "grvt":
+        # GRVT：优先使用环境变量，其次读取配置文件
+        grvt_config_path = Path("config/exchanges/grvt_config.yaml")
+
+        if (not api_key or not api_secret) and grvt_config_path.exists():
+            try:
+                with open(grvt_config_path, 'r', encoding='utf-8') as f:
+                    grvt_config_data = yaml.safe_load(f) or {}
+
+                auth_config = grvt_config_data.get('grvt', {}).get('authentication', {})
+                api_config = grvt_config_data.get('grvt', {}).get('api', {})
+
+                api_key = api_key or auth_config.get('api_key', "")
+                api_secret = api_secret or auth_config.get('eth_private_key', "")
+                grvt_credentials.setdefault('signer_address', auth_config.get('signer_address', ""))
+                grvt_credentials.setdefault('trading_account_id', auth_config.get('trading_account_id', ""))
+                grvt_credentials.setdefault('base_url', api_config.get('base_url'))
+                grvt_credentials.setdefault('websocket_url', api_config.get('websocket_url'))
+                grvt_credentials.setdefault('testnet', api_config.get('testnet', False))
+
+                print(f"   ✓ 从配置文件读取GRVT密钥: {grvt_config_path}")
+            except Exception as e:
+                print(f"   ⚠️  读取GRVT配置失败: {e}")
+
+        exchange_config = ExchangeConfig(
+            exchange_id="grvt",
+            name="GRVT",
+            exchange_type=market_type,
+            api_key=api_key or "",
+            api_secret=api_secret or "",
+            base_url=grvt_credentials.get('base_url'),
+            ws_url=grvt_credentials.get('websocket_url'),
+            testnet=str(grvt_credentials.get('testnet')).lower() == 'true'
+            if isinstance(grvt_credentials.get('testnet'), str)
+            else bool(grvt_credentials.get('testnet', True)),
+            enable_websocket=True,
+            enable_auto_reconnect=True,
+            extra_params={
+                'signer_address': grvt_credentials.get('signer_address', ''),
+                'trading_account_id': grvt_credentials.get('trading_account_id', ''),
+                'websocket_url': grvt_credentials.get('websocket_url'),
+            }
+        )
+
     else:
         # 其他交易所使用标准配置
         exchange_config = ExchangeConfig(

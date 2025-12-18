@@ -1,0 +1,10 @@
+grvt:
+  authentication:
+    api_key: "your_grvt_api_key"
+    eth_private_key: "0xyour_private_key"
+    signer_address: "0xsigner_address"
+    trading_account_id: "your_trading_account_id"
+  api:
+    base_url: "https://api.grvt.io"
+    websocket_url: "wss://api.grvt.io/ws"
+    testnet: true

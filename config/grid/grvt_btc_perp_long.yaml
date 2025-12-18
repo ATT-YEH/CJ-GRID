@@ -1,0 +1,29 @@
+# GRVT BTC 永续合约做多网格示例
+
+grid_system:
+  exchange: "grvt"
+  symbol: "BTC-PERP"
+  grid_type: "long"
+
+  # 固定范围参数
+  lower_price: 60000.0
+  upper_price: 62000.0
+
+  # 网格与下单参数
+  grid_interval: 50.0
+  order_amount: 0.001
+  quantity_precision: 4
+  price_decimals: 2
+  fee_rate: 0.0004
+
+  # 风险与行为配置
+  reverse_order_grid_distance: 1
+  order_health_check_enabled: true
+  order_health_check_interval: 600
+  rest_position_query_interval: 2
+
+  # 剥头皮/止盈等可选项（按需开启）
+  scalping_enabled: false
+  take_profit_enabled: false
+  capital_protection_enabled: false
+  stop_loss_protection_enabled: false
