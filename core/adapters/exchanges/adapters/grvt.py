@@ -8,6 +8,7 @@
 from __future__ import annotations
 
 import asyncio
+import time
 from datetime import datetime
 from decimal import Decimal
 from typing import Any, Dict, List, Optional, Callable
@@ -89,7 +90,29 @@ class GrvtAdapter(ExchangeAdapter):
         )
 
     async def get_ticker(self, symbol: str) -> TickerData:
-        return TickerData(symbol=symbol, timestamp=datetime.utcnow())
+        px = Decimal("61000")
+        if self.logger:
+            self.logger.debug(f"[GRVT MOCK] get_ticker {symbol} -> {px}")
+        now = datetime.utcnow()
+        ticker = TickerData(
+            symbol=symbol,
+            last=px,
+            mark_price=px,
+            close=px,
+            timestamp=now,
+            raw_data={
+                "symbol": symbol,
+                "price": float(px),
+                "last": float(px),
+                "last_price": float(px),
+                "mark_price": float(px),
+                "timestamp": time.time(),
+            },
+        )
+        # 兼容可能直接访问 price/last_price 字段的调用方
+        ticker.price = px  # type: ignore[attr-defined]
+        ticker.last_price = px  # type: ignore[attr-defined]
+        return ticker
 
     async def get_tickers(self, symbols: Optional[List[str]] = None) -> List[TickerData]:
         symbols = symbols or []
@@ -231,4 +254,3 @@ class GrvtAdapter(ExchangeAdapter):
         """将订单事件推送到用户数据流。"""
 
         await self.websocket.send_user_event(order)
-
