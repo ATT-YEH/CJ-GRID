@@ -90,7 +90,10 @@ class GrvtAdapter(ExchangeAdapter):
         )
 
     async def get_ticker(self, symbol: str) -> TickerData:
-        px = Decimal("61000")
+        mock_price = getattr(self, "_mock_price", None)
+        price = mock_price if mock_price is not None else 61000.0
+        price = max(float(price), 1.0)
+        px = Decimal(str(price))
         if self.logger:
             self.logger.debug(f"[GRVT MOCK] get_ticker {symbol} -> {px}")
         now = datetime.utcnow()
@@ -145,6 +148,29 @@ class GrvtAdapter(ExchangeAdapter):
         for sym in symbols:
             positions.append(await self.rest.get_position(sym))
         return positions
+
+    async def order(
+        self,
+        symbol: str,
+        side: str,
+        price: float,
+        quantity: float,
+        batch_mode: bool = False,
+        **kwargs,
+    ) -> OrderData:
+        """
+        Compatibility order interface for grid engine.
+        batch_mode is accepted but ignored in mock.
+        """
+        return await self.create_order(
+            symbol=symbol,
+            side=side,
+            order_type="limit",
+            price=price,
+            quantity=quantity,
+            batch_mode=batch_mode,
+            **kwargs,
+        )
 
     async def create_order(
         self,
