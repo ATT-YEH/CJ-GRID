@@ -149,21 +149,37 @@ class GrvtAdapter(ExchangeAdapter):
     async def create_order(
         self,
         symbol: str,
-        side: OrderSide,
-        order_type: OrderType,
-        amount: Decimal,
-        price: Optional[Decimal] = None,
-        params: Optional[Dict[str, Any]] = None,
+        side: str,
+        order_type: str,
+        price: float,
+        quantity: float,
+        batch_mode: bool = False,
+        **kwargs,
     ) -> OrderData:
-        if order_type not in (OrderType.LIMIT, OrderType.POST_ONLY, OrderType.FOK, OrderType.IOC):
+        """
+        Mock create order for GRVT adapter.
+
+        batch_mode is accepted for compatibility with grid engine but ignored in mock.
+        """
+        if self.logger:
+            self.logger.debug(
+                f"[GRVT MOCK] create_order symbol={symbol}, side={side}, "
+                f"price={price}, qty={quantity}, batch_mode={batch_mode}"
+            )
+
+        order_type_value = order_type.value if isinstance(order_type, OrderType) else str(order_type).lower()
+        order_type_enum = OrderType(order_type_value)
+        if order_type_enum not in (OrderType.LIMIT, OrderType.POST_ONLY, OrderType.FOK, OrderType.IOC):
             raise ValueError("GRVT 目前仅支持限价单接口")
 
+        side_value = side.value if isinstance(side, OrderSide) else str(side).lower()
+        side_enum = OrderSide(side_value)
         order = await self.rest.place_limit_order(
             symbol=symbol,
-            side=side,
-            price=price or Decimal("0"),
-            size=amount,
-            client_order_id=params.get("client_order_id") if params else None,
+            side=side_enum,
+            price=Decimal(str(price)),
+            size=Decimal(str(quantity)),
+            client_order_id=kwargs.get("client_order_id"),
         )
 
         # 推送到用户数据流
