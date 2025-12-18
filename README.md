@@ -4,7 +4,7 @@
 
 ## 🎯 项目简介
 
-这是一个企业级的多交易所加密货币自动化交易系统，提供高性能、高可靠性的网格交易、刷量交易、套利监控和市场监控功能。系统采用严格的分层架构设计，支持 Hyperliquid、Backpack、Lighter、Binance、OKX、EdgeX 等多个交易所的完整适配。
+这是一个企业级的多交易所加密货币自动化交易系统，提供高性能、高可靠性的网格交易、刷量交易、套利监控和市场监控功能。系统采用严格的分层架构设计，支持 Hyperliquid、Backpack、Lighter、Binance、OKX、EdgeX、GRVT 等多个交易所的完整适配。
 
 ## 🏗️ 核心系统架构
 
@@ -48,6 +48,7 @@
 │   ├── Binance 适配器        # 现货 + 永续合约
 │   ├── OKX 适配器            # 现货 + 永续合约
 │   ├── EdgeX 适配器          # 永续合约
+│   ├── GRVT 适配器           # 永续合约
 │   └── 统一接口标准          # 标准化 API 接口
 └── 🏛️ 基础设施层 (Infrastructure)
     ├── 依赖注入容器          # DI 容器管理
@@ -83,7 +84,20 @@ config/exchanges/
 ├── lighter_config.yaml        # Lighter 配置
 ├── binance_config.yaml        # Binance 配置
 ├── okx_config.yaml            # OKX 配置
-└── edgex_config.yaml          # EdgeX 配置
+├── edgex_config.yaml          # EdgeX 配置
+└── grvt_config.yaml           # GRVT 配置
+```
+
+也可以使用环境变量覆盖配置（优先级最高）：
+
+```
+GRVT_API_KEY=...
+GRVT_ETH_PRIVATE_KEY=...
+GRVT_SIGNER_ADDRESS=...
+GRVT_TRADING_ACCOUNT_ID=...
+GRVT_BASE_URL=https://api.grvt.io            # 可选，默认即为该值
+GRVT_WEBSOCKET_URL=wss://api.grvt.io/ws      # 可选
+GRVT_TESTNET=true                            # 可选，默认为 true
 ```
 
 ### 快速启动各系统
@@ -140,6 +154,7 @@ config/grid/
 ├── hyperliquid_btc_perp_long.yaml          # Hyperliquid BTC 做多
 ├── hyperliquid_btc_perp_short.yaml         # Hyperliquid BTC 做空
 ├── hyperliquid_btc_spot_long.yaml          # Hyperliquid 现货做多
+├── grvt_btc_perp_long.yaml                 # GRVT BTC 永续做多（示例）
 ├── backpack_capital_protection_long_btc.yaml   # Backpack BTC 本金保护
 ├── backpack_capital_protection_long_eth.yaml   # Backpack ETH 本金保护
 ├── backpack_capital_protection_long_sol.yaml   # Backpack SOL 本金保护
